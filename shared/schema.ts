@@ -28,12 +28,18 @@ export const reservations = pgTable("reservations", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Enhanced validation for train schema
+export const insertTrainSchema = createInsertSchema(trains).extend({
+  departureTime: z.string().transform((str) => new Date(str)),
+  seats: z.string().transform((str) => parseInt(str, 10)),
+  price: z.string().transform((str) => parseInt(str, 10)),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
 });
 
-export const insertTrainSchema = createInsertSchema(trains);
 export const insertReservationSchema = createInsertSchema(reservations);
 
 export type User = typeof users.$inferSelect;

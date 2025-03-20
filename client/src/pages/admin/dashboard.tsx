@@ -31,7 +31,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  
+
   const { data: trains, isLoading } = useQuery<Train[]>({
     queryKey: ["/api/trains"],
   });
@@ -155,29 +155,24 @@ function TrainForm({ train }: { train?: Train }) {
     defaultValues: train ? {
       ...train,
       departureTime: new Date(train.departureTime).toISOString().slice(0, 16),
+      seats: train.seats.toString(),
+      price: train.price.toString(),
     } : {
       name: "",
       origin: "",
       destination: "",
       departureTime: new Date().toISOString().slice(0, 16),
-      seats: 0,
-      price: 0,
+      seats: "0",
+      price: "0",
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      const trainData = {
-        ...data,
-        departureTime: new Date(data.departureTime),
-        seats: Number(data.seats),
-        price: Number(data.price),
-      };
-
       if (train) {
-        await apiRequest("PUT", `/api/trains/${train.id}`, trainData);
+        await apiRequest("PUT", `/api/trains/${train.id}`, data);
       } else {
-        await apiRequest("POST", "/api/trains", trainData);
+        await apiRequest("POST", "/api/trains", data);
       }
     },
     onSuccess: () => {
@@ -185,6 +180,13 @@ function TrainForm({ train }: { train?: Train }) {
       toast({
         title: "Success",
         description: `Train ${train ? "updated" : "created"} successfully`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
       });
     },
   });
@@ -242,7 +244,7 @@ function TrainForm({ train }: { train?: Train }) {
               <FormLabel>Departure Time</FormLabel>
               <FormControl>
                 <Input 
-                  type="datetime-local" 
+                  type="datetime-local"
                   {...field}
                 />
               </FormControl>
@@ -258,9 +260,9 @@ function TrainForm({ train }: { train?: Train }) {
               <FormLabel>Available Seats</FormLabel>
               <FormControl>
                 <Input 
-                  type="number" 
-                  {...field} 
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  type="number"
+                  min="0"
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -275,9 +277,9 @@ function TrainForm({ train }: { train?: Train }) {
               <FormLabel>Price ($)</FormLabel>
               <FormControl>
                 <Input 
-                  type="number" 
+                  type="number"
+                  min="0"
                   {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
