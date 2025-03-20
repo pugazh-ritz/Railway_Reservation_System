@@ -155,15 +155,15 @@ function TrainForm({ train }: { train?: Train }) {
     defaultValues: train ? {
       ...train,
       departureTime: new Date(train.departureTime).toISOString().slice(0, 16),
-      seats: train.seats.toString(),
-      price: train.price.toString(),
+      seats: train.seats,
+      price: train.price,
     } : {
       name: "",
       origin: "",
       destination: "",
       departureTime: new Date().toISOString().slice(0, 16),
-      seats: "0",
-      price: "0",
+      seats: 0,
+      price: 0,
     },
   });
 
@@ -263,6 +263,7 @@ function TrainForm({ train }: { train?: Train }) {
                   type="number"
                   min="0"
                   {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
                 />
               </FormControl>
               <FormMessage />
@@ -280,6 +281,7 @@ function TrainForm({ train }: { train?: Train }) {
                   type="number"
                   min="0"
                   {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
                 />
               </FormControl>
               <FormMessage />

@@ -29,10 +29,10 @@ export const reservations = pgTable("reservations", {
 });
 
 // Enhanced validation for train schema
-export const insertTrainSchema = createInsertSchema(trains).extend({
+export const insertTrainSchema = createInsertSchema(trains, {
   departureTime: z.string().transform((str) => new Date(str)),
-  seats: z.string().transform((str) => parseInt(str, 10)),
-  price: z.string().transform((str) => parseInt(str, 10)),
+  seats: z.coerce.number().min(0),
+  price: z.coerce.number().min(0),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
