@@ -4,8 +4,17 @@ import { eq } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
 
+const scryptAsync = promisify(scrypt);
 const PostgresSessionStore = connectPg(session);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 export interface IStorage {
   // User operations
@@ -38,12 +47,13 @@ export class DatabaseStorage implements IStorage {
       createTableIfMissing: true,
     });
 
-    // Create default admin user
-    this.getUserByUsername("admin").then((user) => {
+    // Create default admin user with hashed password
+    this.getUserByUsername("admin").then(async (user) => {
       if (!user) {
-        this.createUser({
+        const hashedPassword = await hashPassword("admin123");
+        await this.createUser({
           username: "admin",
-          password: "admin123",
+          password: hashedPassword,
           isAdmin: true,
         } as InsertUser);
       }
