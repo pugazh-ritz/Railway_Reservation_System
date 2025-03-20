@@ -152,11 +152,14 @@ function TrainForm({ train }: { train?: Train }) {
   const { toast } = useToast();
   const form = useForm({
     resolver: zodResolver(insertTrainSchema),
-    defaultValues: train || {
+    defaultValues: train ? {
+      ...train,
+      departureTime: new Date(train.departureTime).toISOString().slice(0, 16),
+    } : {
       name: "",
       origin: "",
       destination: "",
-      departureTime: new Date().toISOString(),
+      departureTime: new Date().toISOString().slice(0, 16),
       seats: 0,
       price: 0,
     },
@@ -164,10 +167,17 @@ function TrainForm({ train }: { train?: Train }) {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
+      const trainData = {
+        ...data,
+        departureTime: new Date(data.departureTime),
+        seats: Number(data.seats),
+        price: Number(data.price),
+      };
+
       if (train) {
-        await apiRequest("PUT", `/api/trains/${train.id}`, data);
+        await apiRequest("PUT", `/api/trains/${train.id}`, trainData);
       } else {
-        await apiRequest("POST", "/api/trains", data);
+        await apiRequest("POST", "/api/trains", trainData);
       }
     },
     onSuccess: () => {
@@ -231,7 +241,10 @@ function TrainForm({ train }: { train?: Train }) {
             <FormItem>
               <FormLabel>Departure Time</FormLabel>
               <FormControl>
-                <Input type="datetime-local" {...field} />
+                <Input 
+                  type="datetime-local" 
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -244,7 +257,11 @@ function TrainForm({ train }: { train?: Train }) {
             <FormItem>
               <FormLabel>Available Seats</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input 
+                  type="number" 
+                  {...field} 
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -257,7 +274,11 @@ function TrainForm({ train }: { train?: Train }) {
             <FormItem>
               <FormLabel>Price ($)</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input 
+                  type="number" 
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
