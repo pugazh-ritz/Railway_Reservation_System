@@ -87,13 +87,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTrain(train: InsertTrain): Promise<Train> {
-    const [newTrain] = await db.insert(trains).values(train).returning();
+    // Ensure departureTime is properly converted to a Date object
+    const trainData = {
+      ...train,
+      departureTime: new Date(train.departureTime),
+    };
+    const [newTrain] = await db.insert(trains).values(trainData).returning();
     return newTrain;
   }
 
   async updateTrain(id: number, updates: Partial<Train>): Promise<Train> {
+    // Ensure departureTime is properly converted if it's being updated
+    const updateData = {
+      ...updates,
+      departureTime: updates.departureTime ? new Date(updates.departureTime) : undefined,
+    };
     const [train] = await db.update(trains)
-      .set(updates)
+      .set(updateData)
       .where(eq(trains.id, id))
       .returning();
     return train;

@@ -30,7 +30,7 @@ export const reservations = pgTable("reservations", {
 
 // Enhanced validation for train schema
 export const insertTrainSchema = createInsertSchema(trains, {
-  departureTime: z.string().transform((str) => new Date(str)),
+  departureTime: z.coerce.date().transform(date => date),
   seats: z.coerce.number().min(0),
   price: z.coerce.number().min(0),
 });
@@ -40,7 +40,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertReservationSchema = createInsertSchema(reservations);
+export const insertReservationSchema = createInsertSchema(reservations, {
+  createdAt: z.date().optional(),
+});
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
