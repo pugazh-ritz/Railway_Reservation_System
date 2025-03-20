@@ -28,6 +28,7 @@ export interface IStorage {
   createTrain(train: InsertTrain): Promise<Train>;
   updateTrain(id: number, train: Partial<Train>): Promise<Train>;
   deleteTrain(id: number): Promise<void>;
+  updateTrainSeats(trainId: number, seatCount: number): Promise<void>;
 
   // Reservation operations
   getReservation(id: number): Promise<Reservation | undefined>;
@@ -124,8 +125,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReservation(reservation: InsertReservation): Promise<Reservation> {
-    const [newReservation] = await db.insert(reservations).values(reservation).returning();
-    return newReservation;
+    return await db.transaction(async (tx) => {
+      // First check if enough seats are available
+      const [train] = await tx.select().from(trains).where(eq(trains.id, reservation.trainId));
+      if (!train || train.seats < reservation.seatCount) {
+        throw new Error("Not enough seats available");
+      }
+
+      // Update train seats
+      await tx.update(trains)
+        .set({ seats: train.seats - reservation.seatCount })
+        .where(eq(trains.id, reservation.trainId));
+
+      // Create the reservation
+      const [newReservation] = await tx.insert(reservations)
+        .values(reservation)
+        .returning();
+
+      return newReservation;
+    });
   }
 
   async updateReservation(id: number, status: string): Promise<Reservation> {
@@ -134,6 +152,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(reservations.id, id))
       .returning();
     return reservation;
+  }
+
+  async updateTrainSeats(trainId: number, seatCount: number): Promise<void> {
+    await db.transaction(async (tx) => {
+      const [train] = await tx.select().from(trains).where(eq(trains.id, trainId));
+      if (!train || train.seats < seatCount) {
+        throw new Error("Not enough seats available");
+      }
+      await tx.update(trains)
+        .set({ seats: train.seats - seatCount })
+        .where(eq(trains.id, trainId));
+    });
   }
 }
 
